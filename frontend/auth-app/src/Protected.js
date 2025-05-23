@@ -1,10 +1,10 @@
-import React, {useEffect, useState} from "react";
-import {useNavigate} from 'react-router-dom'
+import React, { useEffect, useState } from "react";
+import { useNavigate } from 'react-router-dom';
+import './App.css';
 
 function ProtectedPage() {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
-    // Estado para el formulario
   const [formData, setFormData] = useState({
     gustaCaminar: "",
     gustaCicla: "",
@@ -13,144 +13,119 @@ function ProtectedPage() {
     comuna: "",
   });
 
-  const [submitted, setSubmitted] = useState(false);
+  useEffect(() => {
+    const verifyToken = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        navigate('/');
+        return;
+      }
 
-  // Manejar cambio de inputs
+      try {
+        const response = await fetch(`http://localhost:8000/verify-token/${token}`);
+        if (!response.ok) throw new Error('Token inválido');
+      } catch (error) {
+        localStorage.removeItem('token');
+        navigate('/');
+      }
+    };
+
+    verifyToken();
+  }, [navigate]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prevData) => ({
-      ...prevData,
+    setFormData(prev => ({
+      ...prev,
       [name]: value,
     }));
   };
 
-   // Manejar envío del formulario
-  const handleSubmit = async (e) => {
-  e.preventDefault();
-  const token = localStorage.getItem('token');
-  if (!token) {
-    alert('No estás autenticado');
-    navigate('/'); // o lo que quieras hacer si no hay token
-    return;
-  }
   const transformToSnakeCase = (data) => ({
-  gusta_caminar: data.gustaCaminar,
-  gusta_cicla: data.gustaCicla,
-  ahorro_comodidad: data.ahorroComodidad,
-  tiempo_espera: data.tiempoEspera,
-  comuna: data.comuna,
-});
-  try {
-    const response = await fetch('http://localhost:8000/survey', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,  // importante para que el backend valide
-      },
-      body: JSON.stringify(transformToSnakeCase(formData)),
+    gusta_caminar: data.gustaCaminar,
+    gusta_cicla: data.gustaCicla,
+    ahorro_comodidad: data.ahorroComodidad,
+    tiempo_espera: data.tiempoEspera,
+    comuna: data.comuna,
+  });
 
-    });
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const token = localStorage.getItem('token');
 
-    if (response.ok) {
-      console.log('Encuesta enviada con éxito');
-      setSubmitted(true);
-    } else {
-      const errorData = await response.json();
-      alert('Error al enviar encuesta: ' + JSON.stringify(errorData.detail || errorData));
-      console.error('Error:', errorData);
-    }
-  } catch (error) {
-    alert('Error de conexión con el servidor');
-    console.error('Error en fetch:', error);
-  }
-};
+    try {
+      const response = await fetch('http://localhost:8000/survey', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(transformToSnakeCase(formData)),
+      });
 
-
-
-
-    useEffect(() => {
-        const verifyToken = async () => {
-            const token = localStorage.getItem('token');
-                console.log(token)
-            try{
-                    const response = await fetch(`http://localhost:8000/verify-token/${token}`);
-
-                    if (!response.ok) {
-                        throw new Error('Token verification failed');
-                    }
-                }catch (error) {
-                    localStorage.removeItem('token')
-                    navigate('/');
-            }
-        };
-
-        verifyToken();
-    }, [navigate]);
-
-    if (submitted) {
-    return <h2>¡Gracias por responder la encuesta!</h2>;
+      if (response.ok) {
+        navigate('/mapa', { state: { comuna: formData.comuna } });
+      } else {
+        const errorData = await response.json();
+        alert('Error al enviar: ' + (errorData.detail || ''));
       }
+    } catch (error) {
+      alert('Error al conectar con el servidor');
+    }
+  };
 
-    return (
-    <div style={{ padding: "2rem" }}>
-      <h2>Encuesta</h2>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>¿Te gusta caminar?</label><br />
-          <select name="gustaCaminar" value={formData.gustaCaminar} onChange={handleChange} required>
-            <option value="">Selecciona una opción</option>
-            <option value="si">Sí</option>
-            <option value="no">No</option>
-            <option value="tal vez">Tal vez</option>
-          </select>
-        </div>
+  return (
+    <div className="login-container">
+      <form className="login-form" onSubmit={handleSubmit}>
+        <img src="/logo-miruta.jpeg" alt="Logo Mi Ruta" className="logo-img" />
+        <h2>Encuesta</h2>
 
-        <div>
-          <label>¿Te gusta manejar cicla?</label><br />
-          <select name="gustaCicla" value={formData.gustaCicla} onChange={handleChange} required>
-            <option value="">Selecciona una opción</option>
-            <option value="si">Sí</option>
-            <option value="no">No</option>
-            <option value="tal vez">Tal vez</option>
-          </select>
-        </div>
+        <label>¿Te gusta caminar?</label>
+        <select name="gustaCaminar" value={formData.gustaCaminar} onChange={handleChange} required>
+          <option value="">Selecciona una opción</option>
+          <option value="si">Sí</option>
+          <option value="no">No</option>
+          <option value="tal vez">Tal vez</option>
+        </select>
 
-        <div>
-          <label>¿Prefieres ahorro o comodidad?</label><br />
-          <select name="ahorroComodidad" value={formData.ahorroComodidad} onChange={handleChange} required>
-            <option value="">Selecciona una opción</option>
-            <option value="ahorro">Ahorro</option>
-            <option value="comodidad">Comodidad</option>
-          </select>
-        </div>
+        <label>¿Te gusta manejar cicla?</label>
+        <select name="gustaCicla" value={formData.gustaCicla} onChange={handleChange} required>
+          <option value="">Selecciona una opción</option>
+          <option value="si">Sí</option>
+          <option value="no">No</option>
+          <option value="tal vez">Tal vez</option>
+        </select>
 
-        <div>
-          <label>¿Cuánto tiempo estás dispuesta a esperar el bus?</label><br />
-          <select name="tiempoEspera" value={formData.tiempoEspera} onChange={handleChange} required>
-            <option value="">Selecciona una opción</option>
-            <option value="5">5 minutos</option>
-            <option value="10">10 minutos</option>
-            <option value="15">15 minutos</option>
-            <option value="20">20 minutos</option>
-            <option value="25+">Más de 25 minutos</option>
-          </select>
-        </div>
+        <label>¿Prefieres ahorro o comodidad?</label>
+        <select name="ahorroComodidad" value={formData.ahorroComodidad} onChange={handleChange} required>
+          <option value="">Selecciona una opción</option>
+          <option value="ahorro">Ahorro</option>
+          <option value="comodidad">Comodidad</option>
+        </select>
 
-        <div>
-          <label>Digita la comuna donde vives:</label><br />
-          <input
-            type="text"
-            name="comuna"
-            value={formData.comuna}
-            onChange={handleChange}
-            required
-          />
-        </div>
+        <label>¿Cuánto tiempo estás dispuesta a esperar el bus?</label>
+        <select name="tiempoEspera" value={formData.tiempoEspera} onChange={handleChange} required>
+          <option value="">Selecciona una opción</option>
+          <option value="5">5 minutos</option>
+          <option value="10">10 minutos</option>
+          <option value="15">15 minutos</option>
+          <option value="20">20 minutos</option>
+          <option value="25+">Más de 25 minutos</option>
+        </select>
 
-        <br />
+        <label>Digita la comuna donde vives (número):</label>
+        <input
+          type="text"
+          name="comuna"
+          value={formData.comuna}
+          onChange={handleChange}
+          required
+        />
+
         <button type="submit">Enviar encuesta</button>
       </form>
     </div>
   );
 }
+
 export default ProtectedPage;

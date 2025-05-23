@@ -1,7 +1,9 @@
 import React from "react";
-import {BrowserRouter as Router, Routes, Route} from "react-router-dom";
-import Login from './Login';
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Login from "./Login";
 import ProtectedPage from "./Protected";
+import Mapa from "./Mapa"
+
 
 function App() {
   return (
@@ -9,6 +11,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/protected" element={<ProtectedPage />} />
+        <Route path="/mapa" element={<Mapa />} />
       </Routes>
     </Router>
   );
