@@ -8,7 +8,8 @@ from .database import SessionLocal, engine
 from datetime import datetime, timedelta, timezone
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-
+from app.schemas.survey import SurveyCreate
+from app.models.survey import Survey
 app = FastAPI()
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -104,3 +105,19 @@ def verify_token(token: str = Depends(oauth2_scheme)):
 async def verify_user_token(token:str):
     verify_token(token=token)
     return {"message": "Token is valid"}
+
+@app.post("/survey", status_code=status.HTTP_201_CREATED)
+def save_encuesta(survey_data: SurveyCreate, db: Session = Depends(get_db),
+    token_data: dict = Depends(verify_token),):
+
+    survey = Survey(
+        email=token_data["sub"],
+        gustaCaminar=survey_data.gusta_caminar,
+        gustaCicla=survey_data.gusta_cicla,
+        ahorroComodidad=survey_data.ahorro_comodidad,
+        tiempoEspera=survey_data.tiempo_espera,
+        comuna=survey_data.comuna
+    )
+    db.add(survey)
+    db.commit()
+    return {"message": "Encuesta guardada con éxito"}

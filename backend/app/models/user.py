@@ -10,7 +10,7 @@ class User(Base):
     hashed_password = Column(String)
 
 
-User.metadata.create_all(bind=engine)
+#User.metadata.create_all(bind=engine)
 
 class UserCreate(BaseModel):
     email: str
